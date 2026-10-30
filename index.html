@@ -205,6 +205,24 @@ function walk(fn,list,parent){
 function findNode(id){if(!id)return null;var f=null;walk(function(n){if(n.id===id)f=n;});return f;}
 function parentOf(id){var p=null;walk(function(n,par){if(n.id===id)p=par;});return p;}
 function isCat(n){return state.cats.indexOf(n)>=0;}
+function levelOf(id){
+  var found=0;
+  function w(list,lv){
+    for(var i=0;i<list.length;i++){
+      if(list[i].id===id){found=lv;return true;}
+      if(list[i].kids&&list[i].kids.length&&w(list[i].kids,lv+1))return true;
+    }
+    return false;
+  }
+  w(state.cats,1);
+  return found||1;
+}
+/* 只有"子项目"（第三层及以下、且没有更下一层）才能计时 */
+function canTime(n){
+  if(!n)return false;
+  if(n.kids&&n.kids.length)return false;
+  return levelOf(n.id)>=3;
+}
 function pts(n){var s=n.points||0;if(n.kids){for(var i=0;i<n.kids.length;i++)s+=pts(n.kids[i]);}return s;}
 function sumPts(cats){var s=0;for(var i=0;i<cats.length;i++)s+=pts(cats[i]);return s;}
 function totalPts(){return sumPts(state.cats);}
@@ -233,7 +251,7 @@ function tick(t){
     commit(t);
     var n=findNode(state.run.id);
     var gained=0;
-    if(n&&!(n.kids&&n.kids.length))gained=settle(n);
+    if(canTime(n))gained=settle(n);
     if(gained){
       var after=totalPts();
       var lvB=levelInfo(prev).lv,lvA=levelInfo(after).lv;
@@ -250,7 +268,14 @@ function tick(t){
 function startTimer(id){
   var n=findNode(id);
   if(!n)return;
-  if(n.kids&&n.kids.length){toast('请先选择里面的子项目');return;}
+  if(!canTime(n)){
+    if(isCat(n)){toast('分类不能计时，选里面的项目');return;}
+    if(n.kids&&n.kids.length){toast('先选里面的子项目');return;}
+    if(confirm('「'+n.name+'」是项目，只有子项目能计时。\n现在给它加一个子项目？')){
+      addNode('kid',n.id);return;
+    }
+    return;
+  }
   if(state.run){commit(NOW());state.run=null;}
   n.thr=Math.max(1,Number(n.thr)||60);
   state.run={id:id,since:NOW()};
@@ -283,7 +308,8 @@ function renderTimer(){
   dot.className='dot'+(running?' on':'');
   var th=Math.max(1,Number(n.thr)||60)*60000;
   var left=Math.max(0,th-(n.creditMs||0));
-  sub.textContent=(running?'计时中 · ':'')+'已得 '+pts(n)+' 点 · 距下一点 '+fmt(left);
+  sub.textContent=canTime(n)?((running?'计时中 · ':'')+'已得 '+pts(n)+' 点 · 距下一点 '+fmt(left))
+    :('这是'+(isCat(n)?'分类':'项目')+' · 只有里面的子项目能计时');
   btn.textContent=running?'计时中':'开始计时';
   if(running)btn.classList.add('running');else btn.classList.remove('running');
 }
@@ -330,7 +356,7 @@ function renderDetail(){
   }
   titleEl.textContent=item.name+'训练详情';
   if(!item.kids||!item.kids.length){
-    listEl.innerHTML='<div class="empty-state">「'+esc(item.name)+'」还没有子项目<br><span class="small">点右上「＋ 项目」添加，或直接点它开始计时</span></div>';
+    listEl.innerHTML='<div class="empty-state">「'+esc(item.name)+'」还没有子项目<br><span class="small">点右上「＋ 项目」添加子项目后就能计时</span></div>';
     return;
   }
   var rows=item.kids.map(function(k){
@@ -370,7 +396,7 @@ function selectItem(catId,itemId){
   var it=findNode(itemId);if(!it)return;
   if(catId)view.catId=catId;
   view.itemId=itemId;view.kidId=null;
-  if(!(it.kids&&it.kids.length))setTimerTarget(it.id);
+  if(canTime(it)||!state.run)setTimerTarget(it.id);
   save();renderAll();
 }
 function selectKid(itemId,kidId){
@@ -439,9 +465,9 @@ function openEditSheet(id,opts){
     return '<h3>'+(cat?'编辑分类':'编辑项目')+'</h3>'+
       '<div class="field"><label>名称</label><input id="fName" type="text" maxlength="16" value="'+esc(n.name)+'" placeholder="起个名字"></div>'+
       '<div class="field"><label>图标</label><input id="fIcon" type="text" maxlength="4" value="'+esc(n.icon||'')+'" placeholder="一个 emoji"><div class="emoji-row">'+emojiHTML+'</div></div>'+
-      (cat?'':'<div class="field"><label>达标时长（分钟，每满这么多分钟自动 +1 点）</label><input id="fThr" type="number" inputmode="decimal" min="1" step="1" value="'+(Math.max(1,Number(n.thr)||60))+'"></div>')+
-      (cat?'':'<div class="field"><label>点数（可以直接改）</label><input id="fPts" type="number" inputmode="numeric" min="0" step="1" value="'+(n.points||0)+'"></div>')+
-      (cat?'':'<div class="stats-line">已累计 '+fmtShort(n.totalMs)+' · 已得 '+n.points+' 点'+(n.kids&&n.kids.length?' · 它的点数由子项目累加':'')+'</div>')+
+      (canTime(n)?'<div class="field"><label>达标时长（分钟，每满这么多分钟自动 +1 点）</label><input id="fThr" type="number" inputmode="decimal" min="1" step="1" value="'+(Math.max(1,Number(n.thr)||60))+'"></div>':'')+
+      (canTime(n)?'<div class="field"><label>点数（可以直接改）</label><input id="fPts" type="number" inputmode="numeric" min="0" step="1" value="'+(n.points||0)+'"></div>':'')+
+      (cat?'':(canTime(n)?'<div class="stats-line">已累计 '+fmtShort(n.totalMs)+' · 已得 '+n.points+' 点</div>':'<div class="stats-line">它是项目，不直接计时 · 点数来自子项目累加（当前 '+pts(n)+' 点）</div>'))+
       '<div class="sheet-actions">'+
         '<button class="btn danger" id="fDel">删除</button>'+
         '<button class="btn" id="fCancel">取消</button>'+
@@ -464,7 +490,7 @@ function openEditSheet(id,opts){
     var nm=(sheet.querySelector('#fName').value||'').trim()||'未命名';
     var ic=(sheet.querySelector('#fIcon').value||'').trim()||'•';
     n.name=nm;n.icon=ic;
-    if(!cat){
+    if(!cat&&canTime(n)){
       var v=parseFloat(sheet.querySelector('#fThr').value);
       if(!isFinite(v)||v<1)v=60;
       n.thr=Math.round(v*10)/10;
@@ -540,7 +566,7 @@ function openSettings(){
         '<button class="btn" id="sClose">关闭</button>'+
         '<button class="btn" id="sCount">共 '+totalPts()+' 点</button>'+
       '</div>'+
-      '<div class="stats-line" style="margin-top:14px;text-align:center">v1 · 单机版</div>'+
+      '<div class="stats-line" style="margin-top:14px;text-align:center">v2 · 只有子项目能计时</div>'+
       '<input type="file" id="sFile" accept=".json,application/json" style="display:none">';
   });
   var sheet=ui.sheet;
@@ -703,45 +729,56 @@ function runSelfTests(){
   state=seed();view={catId:null,itemId:null,kidId:null,timerId:null};
   var T=1700000000000;NOW=function(){return T;};
   var cat=state.cats[0],it0=cat.kids[0],it1=cat.kids[1];
+  it0.kids=[newNode({name:'子项A',icon:'✨'})];
+  it1.kids=[newNode({name:'子项B',icon:'✨'})];
+  var t0=it0.kids[0],t1=it1.kids[0];
 
   eq('初始总点数0',totalPts(),0);
-
+  eq('分类不可计时',canTime(cat),false);
+  eq('项目不可计时',canTime(it0),false);
+  eq('子项目可计时',canTime(t0),true);
   startTimer(it0.id);
-  eq('运行态正确',state.run&&state.run.id,it0.id);
+  eq('点项目不会开始计时',state.run,null);
+  startTimer(cat.id);
+  eq('点分类不会开始计时',state.run,null);
+
+  startTimer(t0.id);
+  eq('运行态正确',state.run&&state.run.id,t0.id);
   T+=60*60000-1000;tick();
-  eq('差1秒不加点',it0.points,0);
+  eq('差1秒不加点',t0.points,0);
   T+=1000;tick();
-  eq('满60分钟加1点',it0.points,1);
+  eq('满60分钟加1点',t0.points,1);
   T+=60*60000;tick();
-  eq('满120分钟共2点',it0.points,2);
+  eq('满120分钟共2点',t0.points,2);
   eq('分类点数等于子项和',pts(cat),2);
+  eq('项目点数等于子项和',pts(it0),2);
 
-  startTimer(it1.id);
-  eq('切换后旧项目暂停',state.run.id,it1.id);
-  eq('切换保留旧项目时间',Math.round(it0.totalMs/60000),120);
+  startTimer(t1.id);
+  eq('切换后旧项目暂停',state.run.id,t1.id);
+  eq('切换保留旧项目时间',Math.round(t0.totalMs/60000),120);
   T+=10*60000;tick();
-  eq('新项目累计10分钟',Math.round(it1.totalMs/60000),10);
-  eq('互不干扰',it0.points,2);
-  startTimer(it0.id);
-  eq('切回时间还在',Math.round(it0.totalMs/60000),120);
-  eq('切回点数不变',it0.points,2);
+  eq('新项目累计10分钟',Math.round(t1.totalMs/60000),10);
+  eq('互不干扰',t0.points,2);
+  startTimer(t0.id);
+  eq('切回时间还在',Math.round(t0.totalMs/60000),120);
+  eq('切回点数不变',t0.points,2);
 
   T+=60*60000;tick();
-  eq('180分钟3点',it0.points,3);
-  doReset(it0.id);
-  eq('重置计时归零',it0.totalMs,0);
-  eq('重置不清点数',it0.points,3);
-  eq('重置后仍在计时',state.run&&state.run.id,it0.id);
+  eq('180分钟3点',t0.points,3);
+  doReset(t0.id);
+  eq('重置计时归零',t0.totalMs,0);
+  eq('重置不清点数',t0.points,3);
+  eq('重置后仍在计时',state.run&&state.run.id,t0.id);
 
   pauseTimer();
-  var held=it0.totalMs;
+  var held=t0.totalMs;
   T+=30*60000;tick();
-  eq('暂停后时间不动',it0.totalMs,held);
+  eq('暂停后时间不动',t0.totalMs,held);
 
-  startTimer(it0.id);
+  startTimer(t0.id);
   T+=90*60000;tick();
-  eq('后台90分钟加1点',it0.points,4);
-  eq('后台剩余30分钟结转',Math.round(it0.creditMs/60000),30);
+  eq('后台90分钟加1点',t0.points,4);
+  eq('后台剩余30分钟结转',Math.round(t0.creditMs/60000),30);
 
   var fresh=newNode({name:'阈值测试',thr:60,totalMs:120*60000,creditMs:0,points:2});
   fresh.thr=30;
@@ -758,10 +795,10 @@ function runSelfTests(){
   eq('100点Lv2差100',levelInfo(100),{lv:2,next:100});
   eq('250点Lv3差50',levelInfo(250),{lv:3,next:50});
 
-  applyTimeEdit(it0.id,7200000);
-  eq('改时间后总时长',it0.totalMs,7200000);
-  eq('改时间不动点数',it0.points,4);
-  eq('改时间后进度清零',it0.creditMs,0);
+  applyTimeEdit(t0.id,7200000);
+  eq('改时间后总时长',t0.totalMs,7200000);
+  eq('改时间不动点数',t0.points,4);
+  eq('改时间后进度清零',t0.creditMs,0);
 
   var copy=JSON.parse(JSON.stringify(state));
   eq('序列化往返一致',sumPts(copy.cats),totalPts());
