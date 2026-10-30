@@ -115,6 +115,68 @@ input{ -webkit-user-select:text; user-select:text; }
 .dlg h4{margin:0 0 7px;font-size:17px;font-weight:800;text-align:center;color:#231f19;letter-spacing:.2px;}
 .dlg p{margin:0;font-size:13.5px;line-height:1.7;color:#8b8377;text-align:center;}
 .dlg-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:18px;}
+.dlg p{white-space:pre-line;}
+
+/* ===== 底部导航 ===== */
+.wrap{padding-bottom:calc(84px + env(safe-area-inset-bottom));}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:1fr 1fr;
+  height:calc(58px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);
+  background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  background:none;border:0;padding:0;font-family:inherit;font-size:11px;color:var(--muted);
+  -webkit-tap-highlight-color:transparent;}
+.tab-ic{font-size:20px;line-height:1;opacity:.5;filter:grayscale(1);}
+.tab.active{color:var(--accent);font-weight:800;}
+.tab.active .tab-ic{opacity:1;filter:none;}
+
+/* ===== 日志页 ===== */
+#pageLog{display:none;}
+body.tab-log #pageLog{display:block;}
+body.tab-log .wrap > .topbar,
+body.tab-log .wrap > .timer-card,
+body.tab-log .wrap > .sec-head,
+body.tab-log .wrap > .cat-row,
+body.tab-log .wrap > #overview,
+body.tab-log .wrap > #detailList{display:none;}
+
+.day-card{background:var(--card);border:1px solid var(--line);border-radius:18px;margin-bottom:11px;overflow:hidden;
+  box-shadow:0 6px 18px rgba(176,146,100,.07);}
+.day-head{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;
+  background:linear-gradient(135deg,var(--warm1),var(--warm2));border-bottom:1px solid var(--line2);}
+.day-d{font-size:13.5px;font-weight:700;color:#4a4238;}
+.day-sum{font-size:13px;font-weight:800;color:var(--accent);}
+.log-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line2);}
+.log-row:last-child{border-bottom:0;}
+.log-row .chip,.tl-card .chip{width:30px;height:30px;border-radius:9px;font-size:15px;}
+.tl-card .chip{width:28px;height:28px;border-radius:8px;font-size:14px;}
+.log-main{flex:1;min-width:0;}
+.log-nm{font-size:14px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:5px;}
+.log-nm em{font-style:normal;font-size:9.5px;font-weight:700;color:#b07a2a;background:#fdf1dd;
+  border:1px solid #f2ddb8;border-radius:5px;padding:1px 4px;}
+.log-path{font-size:11px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.log-right{text-align:right;flex:none;}
+.log-pt{font-size:14.5px;font-weight:800;color:var(--accent);}
+.log-time{font-size:10.5px;color:var(--muted);margin-top:1px;font-variant-numeric:tabular-nums;}
+.log-empty{padding:46px 20px;text-align:center;color:var(--muted);font-size:13.5px;line-height:2;}
+.log-empty span{font-size:11.5px;color:#bdb3a2;}
+
+.tl{position:relative;padding-left:24px;}
+.tl::before{content:'';position:absolute;left:9px;top:8px;bottom:10px;width:2px;background:var(--line);}
+.tl-item{position:relative;margin-bottom:13px;}
+.tl-dot{position:absolute;left:-20px;top:17px;width:9px;height:9px;border-radius:50%;
+  background:#fff;border:2px solid var(--accent);}
+.tl-date{font-size:11.5px;color:var(--muted);font-weight:700;margin-bottom:6px;}
+.tl-date em{font-style:normal;font-size:9.5px;color:#b07a2a;background:#fdf1dd;border-radius:4px;padding:1px 4px;margin-left:5px;}
+.tl-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;
+  display:flex;align-items:center;gap:9px;box-shadow:0 5px 14px rgba(176,146,100,.06);}
+.tl-right{font-size:13.5px;font-weight:800;color:var(--accent);flex:none;}
+
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:5px;background:#f7f1e6;border-radius:12px;padding:4px;}
+.seg button{border:0;background:none;font-family:inherit;font-size:13px;padding:9px 0;border-radius:9px;
+  color:var(--muted);font-weight:700;}
+.seg button.on{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(176,146,100,.14);}
+.field select{width:100%;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;
+  border:1px solid var(--line);border-radius:12px;padding:10px 11px;-webkit-appearance:none;appearance:none;}
 #testout{position:fixed;left:0;top:0;background:#fff;font-size:10px;z-index:99;white-space:pre;}
 </style>
 </head>
@@ -154,7 +216,14 @@ input{ -webkit-user-select:text; user-select:text; }
     <button class="mini-btn" id="btnAddKid">＋ 项目</button>
   </div>
   <div id="detailList"></div>
+
+  <section id="pageLog"></section>
 </div>
+
+<nav class="tabbar" id="tabbar">
+  <button class="tab active" data-tab="home"><span class="tab-ic">⏱</span><span class="tab-tx">训练</span></button>
+  <button class="tab" data-tab="log"><span class="tab-ic">📋</span><span class="tab-tx">日志</span></button>
+</nav>
 
 <div id="toast" class="toast"></div>
 <div id="sheetHost"></div>
@@ -205,7 +274,7 @@ function seed(){
       newNode({name:'写软件',icon:'⏱️'}),newNode({name:'生图',icon:'⏱️'}),newNode({name:'生视频',icon:'⏱️'})
     ]})
   ]});
-  return {v:1,cats:[c1,c2],run:null,view:{catId:c1.id,itemId:c1.kids[0].id,kidId:null,timerId:null}};
+  return {v:1,cats:[c1,c2],run:null,log:[],logStyle:'day',tab:'home',view:{catId:c1.id,itemId:c1.kids[0].id,kidId:null,timerId:null}};
 }
 function seedDemo(){
   var s=seed(),body=s.cats[0],skill=s.cats[1];
@@ -217,6 +286,16 @@ function seedDemo(){
   cook.kids[0].points=12;cook.kids[1].points=3;cook.kids[2].points=8;cook.kids[3].points=6;
   music.kids[0].points=10;
   ai.kids[0].points=14;ai.kids[1].points=6;ai.kids[2].points=4;
+  var t=NOW();
+  s.log=[
+    {t:t-20*60000,id:cook.kids[0].id,name:'鱼香肉丝',icon:'🍲',path:'技能训练 › 厨艺',pts:2,mode:'auto'},
+    {t:t-70*60000,id:hand.kids[1].id,name:'右手',icon:'🏋️',path:'身体训练 › 手部',pts:1,mode:'auto'},
+    {t:t-3*3600e3,id:hand.kids[0].id,name:'左手',icon:'🏋️',path:'身体训练 › 手部',pts:1,mode:'auto'},
+    {t:t-26*3600e3,id:leg.kids[0].id,name:'左腿',icon:'🦵',path:'身体训练 › 腿部',pts:3,mode:'auto'},
+    {t:t-27*3600e3,id:ai.kids[0].id,name:'写软件',icon:'⏱️',path:'技能训练 › AI运用',pts:2,mode:'manual'},
+    {t:t-50*3600e3,id:music.kids[0].id,name:'吉他',icon:'🎸',path:'技能训练 › 琴艺',pts:1,mode:'auto'}
+  ];
+  s.logStyle='day';s.tab='home';
   var it=cook.kids[0];
   it.totalMs=3723000;it.creditMs=23*60000;
   s.view={catId:skill.id,itemId:cook.id,kidId:it.id,timerId:it.id};
@@ -253,6 +332,35 @@ function sumPts(cats){var s=0;for(var i=0;i<cats.length;i++)s+=pts(cats[i]);retu
 function totalPts(){return sumPts(state.cats);}
 function levelInfo(t){return {lv:1+Math.floor(t/100),next:100-(t%100)};}
 
+/* ---------------- log ---------------- */
+function logStyle(){return state.logStyle==='tl'?'tl':'day';}
+function dayStart(ms){var d=new Date(ms);d.setHours(0,0,0,0);return d.getTime();}
+function weekStart(ms){var d=new Date(dayStart(ms));var w=(d.getDay()+6)%7;return d.getTime()-w*864e5;}
+function hms(ms){var d=new Date(ms);return (d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();}
+function fmtDay(ms){var d=new Date(ms);return (d.getMonth()+1)+'月'+d.getDate()+'日 · 周'+['日','一','二','三','四','五','六'][d.getDay()];}
+function chainOf(id){
+  var out=[];
+  function w(list,chain){
+    for(var i=0;i<list.length;i++){
+      var c=chain.concat([list[i]]);
+      if(list[i].id===id){out=c;return true;}
+      if(list[i].kids&&list[i].kids.length&&w(list[i].kids,c))return true;
+    }
+    return false;
+  }
+  w(state.cats,[]);
+  return out;
+}
+function pathOf(id){
+  return chainOf(id).slice(0,-1).map(function(x){return x.name;}).join(' › ');
+}
+function addLog(id,pts,mode){
+  var n=findNode(id);if(!n||!pts)return;
+  state.log=state.log||[];
+  state.log.unshift({t:NOW(),id:n.id,name:n.name,icon:n.icon||'⏱',path:pathOf(n.id),pts:pts,mode:mode||'auto'});
+  if(state.log.length>3000)state.log=state.log.slice(0,3000);
+}
+
 /* ---------------- timer ---------------- */
 function commit(t){
   if(!state.run)return;
@@ -267,6 +375,7 @@ function settle(n){
   var g=0;
   while(n.creditMs>=th&&g<10000){n.creditMs-=th;n.points=(n.points||0)+1;g++;}
   if(n.creditMs<0)n.creditMs=0;
+  if(g>0){addLog(n.id,g,'auto');if(state.tab==='log')renderLog();}
   return g;
 }
 function tick(t){
@@ -392,6 +501,75 @@ function renderDetail(){
   listEl.innerHTML=rows+'<div class="hint">点一下切换计时 · 长按可改名 / 改时长 / 删除</div>';
 }
 function renderAll(){renderTimer();renderCats();renderOverview();renderDetail();}
+
+function logCell(k,v){return '<div class="ov-cell"><div class="ov-k">'+k+'</div><div class="ov-v">'+v+'<small>点</small></div></div>';}
+function renderLog(){
+  var box=document.getElementById('pageLog');
+  if(!box)return;
+  var list=state.log||[];
+  var t0=dayStart(NOW()),w0=weekStart(NOW()),tp=0,wp=0;
+  for(var i=0;i<list.length;i++){
+    if(list[i].t>=t0)tp+=Number(list[i].pts)||0;
+    if(list[i].t>=w0)wp+=Number(list[i].pts)||0;
+  }
+  var html='<div class="topbar"><h1>日志</h1><button class="icon-btn" id="btnLogCsv" aria-label="导出">⤓</button></div>'+
+    '<div class="overview"><div class="ov-head">加点统计</div><div class="ov-body">'+
+    logCell('今天',tp)+logCell('本周',wp)+logCell('累计',totalPts())+'</div></div>'+
+    '<div class="sec-head"><h2>每天加了什么</h2><button class="mini-btn" id="btnLogAdd">＋ 手动记录</button></div>';
+
+  if(!list.length){
+    html+='<div class="log-empty">还没有记录<br><span>计时满一个达标时长，这里会自动出现一条</span></div>';
+  }else if(logStyle()==='tl'){
+    html+='<div class="tl">'+list.map(function(e,idx){
+      var d=new Date(e.t);
+      return '<div class="tl-item"><span class="tl-dot"></span><div class="tl-date">'+
+        (d.getMonth()+1)+'月'+d.getDate()+'日 '+hms(e.t)+(e.mode==='manual'?'<em>手动</em>':'')+'</div>'+
+        '<div class="tl-card" data-log="'+idx+'"><span class="chip">'+esc(e.icon||'⏱')+'</span>'+
+        '<div class="log-main"><div class="log-nm">'+esc(e.name)+'</div>'+
+        '<div class="log-path">'+esc(e.path||'')+'</div></div>'+
+        '<div class="tl-right">+'+e.pts+'</div></div></div>';
+    }).join('')+'</div>';
+  }else{
+    var keys=[],map={};
+    for(var j=0;j<list.length;j++){
+      var e2=list[j],k=dayStart(e2.t);
+      if(!map[k]){map[k]={t:k,pts:0,rows:[]};keys.push(k);}
+      map[k].pts+=Number(e2.pts)||0;
+      map[k].rows.push({idx:j,e:e2});
+    }
+    html+=keys.map(function(k){
+      var g=map[k];
+      return '<div class="day-card"><div class="day-head"><span class="day-d">'+fmtDay(k)+'</span>'+
+        '<span class="day-sum">+'+g.pts+' 点</span></div>'+
+        g.rows.map(function(r){
+          var en=r.e;
+          return '<div class="log-row" data-log="'+r.idx+'"><span class="chip">'+esc(en.icon||'⏱')+'</span>'+
+            '<div class="log-main"><div class="log-nm">'+esc(en.name)+(en.mode==='manual'?'<em>手动</em>':'')+'</div>'+
+            '<div class="log-path">'+esc(en.path||'')+'</div></div>'+
+            '<div class="log-right"><div class="log-pt">+'+en.pts+'</div><div class="log-time">'+hms(en.t)+'</div></div></div>';
+        }).join('')+'</div>';
+    }).join('');
+  }
+  html+='<div class="hint">每满一个达标时长自动记一条 · 长按记录可删</div>';
+  box.innerHTML=html;
+}
+function applyTab(){
+  var t=state.tab==='log'?'log':'home';
+  document.body.classList.toggle('tab-log',t==='log');
+  var nav=document.getElementById('tabbar');
+  if(nav){
+    Array.prototype.forEach.call(nav.querySelectorAll('.tab'),function(b){
+      b.classList.toggle('active',b.getAttribute('data-tab')===t);
+    });
+  }
+  if(t==='log')renderLog();
+}
+function switchTab(t){
+  if(state.tab===t)return;
+  state.tab=t;
+  save();applyTab();
+  if(t!=='log')renderAll();
+}
 
 /* ---------------- persistence ---------------- */
 function save(){
@@ -602,6 +780,57 @@ function applyTimeEdit(id,ms){
   if(state.run&&state.run.id===id)state.run.since=NOW();
   save();renderAll();
 }
+function csvCell(s){s=String(s==null?'':s);return /[\",\n]/.test(s)?('\"'+s.replace(/\"/g,'""')+'\"'):s;}
+function exportLogCsv(){
+  var list=state.log||[];
+  if(!list.length){toast('还没有日志');return;}
+  var rows=['时间,名称,归属,点数,方式'];
+  for(var i=list.length-1;i>=0;i--){
+    var e=list[i];
+    rows.push([csvCell(fmtDay(dayStart(e.t))+' '+hms(e.t)),csvCell(e.name),csvCell(e.path||''),
+      Number(e.pts)||0,e.mode==='manual'?'手动':'计时'].join(','));
+  }
+  try{
+    var blob=new Blob(['\ufeff'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='小姜日常-日志-'+new Date().toISOString().slice(0,10)+'.csv';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(a.href);},3000);
+    toast('已导出 CSV');
+  }catch(err){toast('导出失败');}
+}
+function openManualSheet(){
+  var opts=[];
+  walk(function(n){if(canTime(n))opts.push(n);});
+  if(!opts.length){toast('先给项目加子项目');return;}
+  var cur=findNode(view.timerId);
+  var sel=(cur&&canTime(cur))?cur.id:opts[0].id;
+  var ui=openSheet(function(){
+    var os=opts.map(function(n){
+      return '<option value="'+n.id+'"'+(n.id===sel?' selected':'')+'>'+esc(pathOf(n.id))+' › '+esc(n.name)+'</option>';
+    }).join('');
+    return '<h3>手动记一笔</h3>'+
+      '<div class="field"><label>哪一项</label><select id="mNode">'+os+'</select></div>'+
+      '<div class="field"><label>加几点</label><input id="mPts" type="number" inputmode="numeric" min="1" max="99" value="1"></div>'+
+      '<div class="stats-line">补记用：没开计时但确实练了，记一笔会同时把这几点加到该项目。</div>'+
+      '<div class="sheet-actions"><button class="btn" id="mCancel">取消</button><button class="btn primary" id="mSave">记一笔</button></div>';
+  });
+  var sheet=ui.sheet;
+  sheet._onMaskClose=ui.close;
+  sheet.querySelector('#mCancel').addEventListener('click',ui.close);
+  sheet.querySelector('#mSave').addEventListener('click',function(){
+    var id=sheet.querySelector('#mNode').value;
+    var v=parseInt(sheet.querySelector('#mPts').value,10);
+    if(!isFinite(v)||v<1)v=1;
+    if(v>99)v=99;
+    var n=findNode(id);if(!n)return;
+    n.points=(n.points||0)+v;
+    addLog(n.id,v,'manual');
+    save();renderAll();renderLog();ui.close();
+    toast('已记 +'+v+' 点 · '+n.name);
+  });
+}
 function openSettings(){
   var ui=openSheet(function(){
     return '<h3>设置与备份</h3>'+
@@ -616,7 +845,11 @@ function openSettings(){
         '<button class="btn" id="sClose">关闭</button>'+
         '<button class="btn" id="sCount">共 '+totalPts()+' 点</button>'+
       '</div>'+
-      '<div class="stats-line" style="margin-top:14px;text-align:center">v3 · 改时间后照常加点</div>'+
+      '<div class="field" style="margin-bottom:0"><label>日志样式</label><div class="seg" id="sStyle">'+
+        '<button data-s="day"'+(logStyle()==='day'?' class="on"':'')+'>按天分组</button>'+
+        '<button data-s="tl"'+(logStyle()==='tl'?' class="on"':'')+'>时间轴</button>'+
+      '</div></div>'+
+      '<div class="stats-line" style="margin-top:14px;text-align:center">v4 · 新增日志与底部导航</div>'+
       '<input type="file" id="sFile" accept=".json,application/json" style="display:none">';
   });
   var sheet=ui.sheet;
@@ -644,6 +877,16 @@ function openSettings(){
     if(navigator.clipboard&&navigator.clipboard.writeText){
       navigator.clipboard.writeText(text).then(function(){toast('备份已复制');},fb);
     }else fb();
+  });
+  Array.prototype.forEach.call(sheet.querySelectorAll('#sStyle button'),function(b){
+    b.addEventListener('click',function(){
+      state.logStyle=b.getAttribute('data-s');
+      Array.prototype.forEach.call(sheet.querySelectorAll('#sStyle button'),function(x){
+        x.classList.toggle('on',x===b);
+      });
+      save();renderLog();
+      toast(state.logStyle==='tl'?'日志改为时间轴':'日志改为按天分组');
+    });
   });
   sheet.querySelector('#sImport').addEventListener('click',function(){sheet.querySelector('#sFile').click();});
   sheet.querySelector('#sFile').addEventListener('change',function(e){
@@ -700,6 +943,9 @@ function boot(preset){
     }catch(e){}
   }
   if(!state)state=seed();
+  if(!Array.isArray(state.log))state.log=[];
+  if(state.logStyle!=='tl'&&state.logStyle!=='day')state.logStyle='day';
+  if(state.tab!=='log')state.tab='home';
   if(state.view&&typeof state.view==='object'){
     view={catId:state.view.catId||null,itemId:state.view.itemId||null,kidId:state.view.kidId||null,timerId:state.view.timerId||null};
   }
@@ -732,6 +978,25 @@ function boot(preset){
     addNode('kid',view.itemId);
   });
   document.getElementById('btnSettings').addEventListener('click',openSettings);
+  document.getElementById('tabbar').addEventListener('click',function(e){
+    var b=e.target.closest('.tab');
+    if(b)switchTab(b.getAttribute('data-tab'));
+  });
+  document.getElementById('pageLog').addEventListener('click',function(e){
+    if(e.target.closest('#btnLogCsv')){exportLogCsv();return;}
+    if(e.target.closest('#btnLogAdd')){openManualSheet();}
+  });
+  bindPress(document.getElementById('pageLog'),function(target){
+    var r=target.closest('[data-log]');
+    if(!r)return;
+    var idx=Number(r.getAttribute('data-log'));
+    var en=(state.log||[])[idx];
+    if(!en)return;
+    ask({icon:'🗒',title:'删除这条记录？',body:en.name+' +'+en.pts+' 点\n'+fmtDay(dayStart(en.t))+' '+hms(en.t)+'\n只删这条记录，已得的点数不会扣。',ok:'删除',danger:true,onOk:function(){
+      state.log.splice(idx,1);save();renderLog();toast('已删除记录');
+    }});
+  });
+  applyTab();
   bindPress(document.getElementById('timerCard'),function(){openTimeSheet();});
 
   document.getElementById('catRow').addEventListener('click',function(e){
@@ -854,6 +1119,19 @@ function runSelfTests(){
   T+=1000;tick();
   eq('满60分钟后补上1点',t0.points,5);
   eq('补点后进度归0',t0.creditMs,0);
+
+  state.log=[];
+  var lgNode=newNode({name:'日志项',thr:60,creditMs:60*60000});
+  it0.kids.push(lgNode);
+  settle(lgNode);
+  eq('加点写入日志',state.log.length,1);
+  eq('日志点数正确',state.log[0].pts,1);
+  eq('日志归属路径',state.log[0].path,'身体训练 › 手部');
+  eq('日志方式为自动',state.log[0].mode,'auto');
+  addLog(lgNode.id,2,'manual');
+  eq('手动记录入日志',state.log[0].mode,'manual');
+  eq('最新记录在最前',state.log[0].pts,2);
+  eq('日志默认样式',state.logStyle,'day');
 
   var copy=JSON.parse(JSON.stringify(state));
   eq('序列化往返一致',sumPts(copy.cats),totalPts());
