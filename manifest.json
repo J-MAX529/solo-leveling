@@ -1,0 +1,17 @@
+{
+  "name": "\u6211\u72ec\u81ea\u5347\u7ea7",
+  "short_name": "\u5347\u7ea7",
+  "description": "\u8bad\u7ec3\u8ba1\u65f6\u4e0e\u70b9\u6570\u5347\u7ea7",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f3ec",
+  "theme_color": "#f7f3ec",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
