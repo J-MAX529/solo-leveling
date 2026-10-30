@@ -107,6 +107,14 @@ input{ -webkit-user-select:text; user-select:text; }
 .stats-line{font-size:12px;color:var(--muted);margin:0 0 12px;line-height:1.6;}
 .toast{position:fixed;left:50%;bottom:86px;transform:translate(-50%,10px);background:rgba(38,31,23,.92);color:#fff;font-size:13.5px;padding:9px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:.22s;z-index:60;max-width:82vw;text-align:center;}
 .toast.show{opacity:1;transform:translate(-50%,0);}
+.dlg-mask{position:fixed;inset:0;background:rgba(40,32,22,.42);opacity:0;transition:opacity .16s;z-index:70;}
+.dlg-mask.show{opacity:1;}
+.dlg{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%) scale(.96);width:min(88vw,340px);background:#fff;border-radius:22px;padding:22px 18px 16px;z-index:71;opacity:0;transition:opacity .16s,transform .16s;box-shadow:0 20px 48px rgba(60,44,20,.28);}
+.dlg.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+.dlg-ico{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;font-size:23px;margin:0 auto 11px;background:linear-gradient(135deg,#fdf4e6,#fbebd7);}
+.dlg h4{margin:0 0 7px;font-size:17px;font-weight:800;text-align:center;color:#231f19;letter-spacing:.2px;}
+.dlg p{margin:0;font-size:13.5px;line-height:1.7;color:#8b8377;text-align:center;}
+.dlg-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:18px;}
 #testout{position:fixed;left:0;top:0;background:#fff;font-size:10px;z-index:99;white-space:pre;}
 </style>
 </head>
@@ -177,21 +185,38 @@ function vibrate(ms){try{if(navigator.vibrate)navigator.vibrate(ms);}catch(e){}}
 function newNode(o){var n={id:uid(),name:'',icon:'•',thr:60,totalMs:0,creditMs:0,points:0,kids:[]};if(o){for(var k in o){n[k]=o[k];}}return n;}
 function seed(){
   var c1=newNode({name:'身体训练',icon:'💪',kids:[
-    newNode({name:'手部',icon:'🧘'}),newNode({name:'腿部',icon:'🦵'}),newNode({name:'腹部',icon:'🧍'})
+    newNode({name:'手部',icon:'🧘',kids:[
+      newNode({name:'左手',icon:'🏋️'}),newNode({name:'右手',icon:'🏋️'})
+    ]}),
+    newNode({name:'腿部',icon:'🦵',kids:[
+      newNode({name:'左腿',icon:'🏋️'}),newNode({name:'右腿',icon:'🏋️'})
+    ]}),
+    newNode({name:'腹部',icon:'🧍',kids:[
+      newNode({name:'上腹',icon:'🧘'}),newNode({name:'下腹',icon:'🧘'})
+    ]})
   ]});
-  var cook=newNode({name:'厨艺',icon:'🍳',kids:[
-    newNode({name:'鱼香肉丝',icon:'🍲'}),newNode({name:'土豆饼',icon:'🥔'}),
-    newNode({name:'地三鲜',icon:'🍆'}),newNode({name:'酸菜鱼',icon:'🐟'})
+  var c2=newNode({name:'技能训练',icon:'🎯',kids:[
+    newNode({name:'厨艺',icon:'🍳',kids:[
+      newNode({name:'鱼香肉丝',icon:'🍲'}),newNode({name:'土豆饼',icon:'🥔'}),
+      newNode({name:'地三鲜',icon:'🍆'}),newNode({name:'酸菜鱼',icon:'🐟'})
+    ]}),
+    newNode({name:'琴艺',icon:'🎹',kids:[newNode({name:'吉他',icon:'🎸'})]}),
+    newNode({name:'AI运用',icon:'💻',kids:[
+      newNode({name:'写软件',icon:'⏱️'}),newNode({name:'生图',icon:'⏱️'}),newNode({name:'生视频',icon:'⏱️'})
+    ]})
   ]});
-  var c2=newNode({name:'技能训练',icon:'🎯',kids:[cook,newNode({name:'琴艺',icon:'🎹'}),newNode({name:'编程',icon:'💻'})]});
   return {v:1,cats:[c1,c2],run:null,view:{catId:c1.id,itemId:c1.kids[0].id,kidId:null,timerId:null}};
 }
 function seedDemo(){
   var s=seed(),body=s.cats[0],skill=s.cats[1];
-  body.kids[0].points=15;body.kids[1].points=11;body.kids[2].points=18;
-  var cook=skill.kids[0];
+  var hand=body.kids[0],leg=body.kids[1],core=body.kids[2];
+  hand.kids[0].points=15;hand.kids[1].points=9;
+  leg.kids[0].points=11;leg.kids[1].points=8;
+  core.kids[0].points=18;core.kids[1].points=12;
+  var cook=skill.kids[0],music=skill.kids[1],ai=skill.kids[2];
   cook.kids[0].points=12;cook.kids[1].points=3;cook.kids[2].points=8;cook.kids[3].points=6;
-  skill.kids[1].points=10;skill.kids[2].points=14;
+  music.kids[0].points=10;
+  ai.kids[0].points=14;ai.kids[1].points=6;ai.kids[2].points=4;
   var it=cook.kids[0];
   it.totalMs=3723000;it.creditMs=23*60000;
   s.view={catId:skill.id,itemId:cook.id,kidId:it.id,timerId:it.id};
@@ -271,9 +296,7 @@ function startTimer(id){
   if(!canTime(n)){
     if(isCat(n)){toast('分类不能计时，选里面的项目');return;}
     if(n.kids&&n.kids.length){toast('先选里面的子项目');return;}
-    if(confirm('「'+n.name+'」是项目，只有子项目能计时。\n现在给它加一个子项目？')){
-      addNode('kid',n.id);return;
-    }
+    ask({icon:'➕',title:'这个项目还不能计时',body:'「'+n.name+'」是项目，只有里面的子项目能计时。要现在给它加一个子项目吗？',ok:'加子项目',onOk:function(){addNode('kid',n.id);}});
     return;
   }
   if(state.run){commit(NOW());state.run=null;}
@@ -456,6 +479,31 @@ function openSheet(build){
   mask.addEventListener('click',function(){if(sheet._onMaskClose)sheet._onMaskClose();else close();});
   return {close:close,sheet:sheet,host:host};
 }
+function ask(o){
+  if(TEST)return;
+  var old=document.getElementById('dlgHost');
+  if(old&&old.parentNode)old.parentNode.removeChild(old);
+  var host=document.createElement('div');host.id='dlgHost';
+  var mask=document.createElement('div');mask.className='dlg-mask';
+  var card=document.createElement('div');card.className='dlg';
+  card.innerHTML='<div class="dlg-ico">'+esc(o.icon||'❔')+'</div>'+
+    '<h4>'+esc(o.title||'')+'</h4>'+
+    '<p>'+esc(o.body||'')+'</p>'+
+    '<div class="dlg-actions">'+
+      '<button class="btn" id="dlgNo">'+esc(o.cancel||'取消')+'</button>'+
+      '<button class="btn '+(o.danger?'danger':'primary')+'" id="dlgYes">'+esc(o.ok||'确定')+'</button>'+
+    '</div>';
+  host.appendChild(mask);host.appendChild(card);
+  document.body.appendChild(host);
+  requestAnimationFrame(function(){mask.classList.add('show');card.classList.add('show');});
+  function close(){
+    mask.classList.remove('show');card.classList.remove('show');
+    setTimeout(function(){if(host.parentNode)host.parentNode.removeChild(host);},180);
+  }
+  mask.addEventListener('click',close);
+  card.querySelector('#dlgNo').addEventListener('click',close);
+  card.querySelector('#dlgYes').addEventListener('click',function(){close();if(o.onOk)o.onOk();});
+}
 function openEditSheet(id,opts){
   opts=opts||{};
   var n=findNode(id);if(!n)return;
@@ -502,9 +550,10 @@ function openEditSheet(id,opts){
     toast(opts.isNew?'已添加':'已保存');
   });
   sheet.querySelector('#fDel').addEventListener('click',function(){
-    var extra=(n.kids&&n.kids.length)?('，它下面的 '+n.kids.length+' 个子项目也会一起删除'):'';
-    if(!confirm('删除「'+n.name+'」？'+extra+'。已得点数会一起消失，无法撤销。'))return;
-    removeNode(id);fixView();renderAll();ui.close();toast('已删除');
+    var extra=(n.kids&&n.kids.length)?('它下面 '+n.kids.length+' 个子项目也会一起删除。'):'';
+    ask({icon:'🗑',title:'删除「'+n.name+'」？',body:extra+'已得点数会一起消失，无法撤销。',ok:'删除',danger:true,onOk:function(){
+      removeNode(id);fixView();renderAll();ui.close();toast('已删除');
+    }});
   });
 }
 function openTimeSheet(){
@@ -548,7 +597,8 @@ function openTimeSheet(){
 function applyTimeEdit(id,ms){
   var n=findNode(id);if(!n)return;
   n.totalMs=Math.max(0,Math.floor(ms||0));
-  n.creditMs=0;
+  var th=Math.max(1,Number(n.thr)||60)*60000;
+  n.creditMs=n.totalMs%th;
   if(state.run&&state.run.id===id)state.run.since=NOW();
   save();renderAll();
 }
@@ -566,7 +616,7 @@ function openSettings(){
         '<button class="btn" id="sClose">关闭</button>'+
         '<button class="btn" id="sCount">共 '+totalPts()+' 点</button>'+
       '</div>'+
-      '<div class="stats-line" style="margin-top:14px;text-align:center">v2 · 只有子项目能计时</div>'+
+      '<div class="stats-line" style="margin-top:14px;text-align:center">v3 · 改时间后照常加点</div>'+
       '<input type="file" id="sFile" accept=".json,application/json" style="display:none">';
   });
   var sheet=ui.sheet;
@@ -611,10 +661,10 @@ function openSettings(){
     r.readAsText(f);
   });
   sheet.querySelector('#sClear').addEventListener('click',function(){
-    if(!confirm('清空所有分类、项目和点数？'))return;
-    if(!confirm('真的清空？这一步无法撤销。'))return;
-    state={v:1,cats:[],run:null,view:{}};view={catId:null,itemId:null,kidId:null,timerId:null};
-    save();renderAll();ui.close();toast('已清空');
+    ask({icon:'⚠️',title:'清空全部数据？',body:'所有分类、项目、子项目、点数和计时都会消失，这一步无法撤销。建议先导出备份。',ok:'确认清空',danger:true,onOk:function(){
+      state={v:1,cats:[],run:null,view:{}};view={catId:null,itemId:null,kidId:null,timerId:null};
+      save();renderAll();ui.close();toast('已清空');
+    }});
   });
 }
 
@@ -674,8 +724,7 @@ function boot(preset){
   document.getElementById('btnReset').addEventListener('click',function(){
     var n=findNode(view.timerId);
     if(!n){toast('先点一个项目');return;}
-    if(!confirm('把「'+n.name+'」的计时清零？已得的 '+pts(n)+' 点不会扣。'))return;
-    doReset(n.id);toast('计时已清零');
+    ask({icon:'🧹',title:'清零计时？',body:'「'+n.name+'」的累计时长会归零，已得的 '+pts(n)+' 点不会扣。',ok:'清零',danger:true,onOk:function(){doReset(n.id);toast('计时已清零');}});
   });
   document.getElementById('btnAddCat').addEventListener('click',function(){addNode('cat');});
   document.getElementById('btnAddKid').addEventListener('click',function(){
@@ -798,7 +847,13 @@ function runSelfTests(){
   applyTimeEdit(t0.id,7200000);
   eq('改时间后总时长',t0.totalMs,7200000);
   eq('改时间不动点数',t0.points,4);
-  eq('改时间后进度清零',t0.creditMs,0);
+  eq('整点改时间进度为0',t0.creditMs,0);
+
+  applyTimeEdit(t0.id,3599000);
+  eq('改59分59秒进度接续',t0.creditMs,3599000);
+  T+=1000;tick();
+  eq('满60分钟后补上1点',t0.points,5);
+  eq('补点后进度归0',t0.creditMs,0);
 
   var copy=JSON.parse(JSON.stringify(state));
   eq('序列化往返一致',sumPts(copy.cats),totalPts());
